@@ -1,0 +1,123 @@
+<?php
+use Zend\Mvc\Controller\Plugin\FlashMessenger as PluginFlashMessenger;
+
+/* 
+ * Copyright (C) 2014 schurix
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
+$paginatorCreater = function($rows, $page_length, $page){
+	return $rows;
+};
+
+?>
+
+<h1><?php echo $this->translate($this->title) ?></h1>
+
+<?php 
+	$messengerClasses = array(
+        PluginFlashMessenger::NAMESPACE_INFO => 'info',
+        PluginFlashMessenger::NAMESPACE_ERROR => 'danger',
+        PluginFlashMessenger::NAMESPACE_SUCCESS => 'success',
+        PluginFlashMessenger::NAMESPACE_DEFAULT => 'info',
+        PluginFlashMessenger::NAMESPACE_WARNING => 'warning'
+	);
+	$this->flashMessenger()->setMessageOpenFormat('<div%s>');
+	$this->flashMessenger()->setMessageCloseString('</div>');
+	$this->flashMessenger()->setMessageSeparatorString('</div><div%s>');
+	foreach($messengerClasses as $messengerClass => $cssClass){
+		echo $this->flashMessenger()->render($messengerClass, array('alert', 'alert-'.$cssClass, 'alert-dismissible'));
+	}
+?>
+
+<div class="navbar filter-bar">
+    <div class="navbar-inner">
+		<div class="pull-left">
+			<?php if(!empty($this->parent_route_title)) : ?>
+				<?php $parentRoute = call_user_func($this->parent_route_builder); ?>
+	            <a href="<?php echo $parentRoute ?>" class="btn btn-primary">
+					<i class="glyphicon glyphicon-chevron-left"></i> <?php echo $this->translate($this->parent_route_title) ?>
+	            </a>
+			<?php endif; ?>
+		</div>
+		
+        <div class="pull-right">
+			<?php $createRoute = call_user_func($this->route_builder, "create"); ?>
+			<?php if(!empty($createRoute)) : ?>
+	            <a href="<?php echo $createRoute ?>" class="btn btn-primary">
+	                <?php echo $this->translate($this->create_text) ?>
+	            </a>
+			<?php endif; ?>
+        </div>
+    </div>
+</div>
+
+<?php
+
+$paginator = $paginatorCreater($this->rows, $this->page_length, $this->page);
+
+$getters = array();
+foreach ($this->columns as $element) {
+	$getters[$element] = call_user_func($this->getter_creator, $element);
+}
+
+$idGetter = call_user_func($this->getter_creator, $this->id_name);
+$aliasGetter = call_user_func($this->getter_creator, $this->alias_name);
+
+$columns = array();
+foreach($this->columns as $name => $element){
+	$columns[] = (object)array(
+		'displayText' => $name,
+		'key' => $element,
+		'getter' => $getters[$element]
+	);
+}
+
+echo '<div class="sortableList">';
+echo $this->partial('partial/admin_treelist_table.phtml', array(
+	'paginator' => $paginator,
+	'columns' => $columns,
+	'route_builder' => $this->route_builder,
+	'id_getter' => $idGetter,
+	'alias_getter' => $aliasGetter,
+	'delete_warning_text' => $this->delete_warning_text,
+	'child_routes' => empty($this->child_routes) ? array() : $this->child_routes,
+	'child_route_builder' => $this->child_route_builder,
+	'buttons' => $this->buttons,
+));
+echo '</div>';
+
+?>
+<script type="text/javascript">
+	var options = {
+		placeholderCss: {'background-color': '#ff8'},
+		hintCss: {'background-color':'#bbf'},
+		opener: {
+			 active: true,
+			 close: '<?php echo $this->basePath('img/Remove2.png') ?>',
+			 open: '<?php echo $this->basePath('img/Add2.png') ?>',
+			 openerCss: {
+			 },
+			 openerClass: 'fa'
+		},
+		ignoreClass: 'cell-control'
+	};
+	
+	$(function(){
+		$('.sortableList').sortableLists( options );
+	});
+	
+</script>

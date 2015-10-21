@@ -1,0 +1,135 @@
+<?php
+
+/* 
+ * Copyright (C) 2015 schurix
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+?>
+<ul>
+	<?php /*
+    <thead>
+        <tr>
+            <?php foreach ($this->columns as $element): ?>
+                <th><?php echo $this->translate($this->escapeHtml($element->displayText ? : $element->key)); ?></th>
+            <?php endforeach; ?>
+            <th>&nbsp;</th>
+        </tr>
+    </thead>
+	 */ ?>
+    <?php 
+		$finfo = new finfo(FILEINFO_MIME_TYPE);
+		$publicPath = realpath(rtrim(getcwd(), "/")."/public")."/";
+		foreach ($this->paginator as $row){
+	?>
+	<li class="sortableListsOpen">
+	<?php
+            $values = array();
+			
+			foreach ($this->columns as $element){
+				if(is_callable($element->getter)){
+					$value = call_user_func($element->getter, $row);
+				} else {
+					$value = call_user_func(array($row, $element->getter));
+				}
+				
+				if($value instanceof DateTime){
+					$value = $value->format('Y-m-d H:i');
+				}
+				
+				if(is_bool($value)){
+					$value = $value ? $this->translate('Yes') : $this->translate('No');
+				}
+				
+				if(file_exists($publicPath.ltrim($value, '/')) && strpos(strtolower($finfo->file($publicPath.ltrim($value, '/'))), 'image/') === 0){
+					$value = sprintf('<img src="%s" height="80">', $this->basePath($value));
+				}
+				
+				if(strpos($value, 'fa fa-') !== false){
+					$value = '<i style="font-size: 30px" class="'.$value.'"></i>';
+				}
+				$values[$element->key] = $value;
+			}
+			$buttons = array();
+			$itemId = call_user_func(array($row, $this->id_getter));
+			$itemAlias = '';
+			if(method_exists($row, $this->alias_getter)){
+				$itemAlias = call_user_func(array($row, $this->alias_getter));
+			}
+			$editRoute = call_user_func($this->route_builder, 'edit', $itemId, $itemAlias);
+			if(!empty($editRoute)){
+				$buttons[] = array(
+					'title' => gettext_noop('Edit'),
+					'url' => $editRoute,
+				);
+			}
+
+			$deleteRoute = call_user_func($this->route_builder, 'delete', $itemId, $itemAlias);
+			if(!empty($deleteRoute)){
+				$buttons[] = array(
+					'title' => gettext_noop('Delete'),
+					'url' => $deleteRoute,
+					'warning' => $this->delete_warning_text
+				);
+			}
+			
+			if(!empty($this->child_routes)){
+				foreach($this->child_routes as $key => $title){
+					$buttons[] = array(
+						'title' => $title,
+						'url' => call_user_func($this->child_route_builder, $key, $itemId, $itemAlias)
+					);
+				}
+			}
+			
+			// Custom row buttons
+			if(!empty($this->buttons)){
+				foreach ($this->buttons as $button) {
+					/* @var $button \XelaxAdmin\Options\ListControllerButton */
+					$url = call_user_func($button->getRouteBuilder(), $this, $itemId, $itemAlias, $row);
+					if($url !== false){
+						$buttons[] = array(
+							'title' => $button->getTitle(),
+							'url' => $url,
+						);
+					}
+				}
+			}
+			
+			echo $this->partial('partial/admin_treelist_row.phtml', array(
+				'values' => $values, 
+				'buttons' => $buttons,
+			));
+			
+			if(!empty($row->getChildren()) && count($row->getChildren()) > 0){
+				echo $this->partial('partial/admin_treelist_table.phtml', array(
+					'paginator' => $row->getChildren(),
+					'columns' => $this->columns,
+					'route_builder' => $this->route_builder,
+					'id_getter' => $this->id_getter,
+					'alias_getter' => $this->alias_getter,
+					'delete_warning_text' => $this->delete_warning_text,
+					'child_routes' => $this->child_routes,
+					'child_route_builder' => $this->child_route_builder,
+					'buttons' => $this->buttons,
+				));
+			}
+	?>
+	</li>
+	<?php
+		} 
+		
+	?>
+</ul>

@@ -1,0 +1,36 @@
+{
+    "name":         "xelax90/xelax-tree-editor",
+	"version":      "dev-master",
+    "description":  "Small extension to xelax-admin to allow tree editing and viewing",
+    "type":         "module",
+	"license":      "GPL-2.0",
+    "homepage":     "https://github.com/xelax90/xelax-tree-editor",
+    "keywords": [
+        "zf2",
+		"front-end",
+		"config"
+    ],
+    "authors": [
+        {
+            "name": "xelax",
+            "email": "schurix@gmx.de",
+			"homepage" : "https://github.com/xelax90"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {
+        "php": ">=5.4",
+		"zendframework/zendframework": "~2.5"
+		"xelax90/xelax-admin" : "*"
+    },
+    "require-dev": {
+    },
+    "suggests": {
+		
+	},
+    "autoload": {
+        "psr-0": {
+            "XelaxTreeEditor\\": "src/"
+        }
+    }
+}
